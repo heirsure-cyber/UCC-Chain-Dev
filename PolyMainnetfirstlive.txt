@@ -1,0 +1,11 @@
+Your Contract Details — SAVE THESE
+Contract Address:  0xC17def4DF914b016D60500Cb9C459c3eAf6469Ff
+Network:           Polygon Mainnet (Chain ID 137)
+Block:             85960719
+Transaction Hash:  0x127e090c4b9181eb053f926f64d931842a1893d5c21699a13e855f7883dae64c
+Deploy Cost:       0.152 POL (~$0.07)
+Deployer Wallet:   0x5DC1107121371b8bf487cDAdF3Bc42eAfA6C7778
+
+See It Live Right Now
+Open your browser and go to:
+https://polygonscan.com/address/0xC17def4DF914b016D60500Cb9C459c3eAf6469Ff
