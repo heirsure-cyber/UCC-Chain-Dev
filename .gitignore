@@ -13,3 +13,4 @@ docs/
 # Dotenv file
 .env
 frontend/app/.env.local
+frontend/app/.env.local
