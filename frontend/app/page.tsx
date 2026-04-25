@@ -104,7 +104,7 @@ export default function Home() {
           <p className="text-gray-400 max-w-2xl mx-auto text-sm leading-relaxed">
             UCC-Chain cryptographically links UCC-1 financing statements to on-chain wallet
             addresses. Enter a filing ID, wallet, and salt to verify control under{" "}
-            <span className="text-yellow-400">UCC Article 12</span> — effective New York June 3, 2026.
+            <a href="https://www.uniformlaws.org/committees/community-home?CommunityKey=1457c422-ddb7-40b0-8c76-39a1991651ac" target="_blank" rel="noopener noreferrer" className="text-yellow-400 underline hover:text-yellow-300 transition-colors">UCC Article 12</a> — effective New York June 3, 2026.
           </p>
         </div>
 
@@ -350,7 +350,7 @@ export default function Home() {
 
         <footer className="mt-8 text-center text-xs text-gray-600">
           <p>UCC-Chain LLC - HeirSure LLC - New York - April 2026</p>
-          <p className="mt-1">Built with Claude AI - Deployed on Polygon PoS Mainnet - MIT License</p>
+          
         </footer>
       </div>
     </main>
