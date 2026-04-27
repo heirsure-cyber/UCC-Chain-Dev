@@ -6,7 +6,6 @@ import {
   verifyCommitment,
   formatTimestamp,
   getStateName,
-  formatAddress,
   CONTRACT_ADDRESS,
   POLYGONSCAN_URL,
   type VerifyResult,
@@ -104,11 +103,16 @@ export default function Home() {
           <p className="text-gray-400 max-w-2xl mx-auto text-sm leading-relaxed">
             UCC-Chain cryptographically links UCC-1 financing statements to on-chain wallet
             addresses. Enter a filing ID, wallet, and salt to verify control under{" "}
-            <a href="https://www.uniformlaws.org/committees/community-home?CommunityKey=1457c422-ddb7-40b0-8c76-39a1991651ac" target="_blank" rel="noopener noreferrer" className="text-yellow-400 underline hover:text-yellow-300 transition-colors">UCC Article 12</a> — effective New York June 3, 2026.
+            <a href="https://www.uniformlaws.org/committees/community-home?CommunityKey=1457c422-ddb7-40b0-8c76-39a1991651ac"
+              target="_blank" rel="noopener noreferrer"
+              className="text-yellow-400 underline hover:text-yellow-300 transition-colors">
+              UCC Article 12
+            </a>{" "}
+            - effective New York June 3, 2026.
           </p>
         </div>
 
-        <div className="flex gap-2 mb-6 bg-gray-900 p-1 rounded-lg w-fit mx-auto">
+        <div className="flex gap-2 mb-3 bg-gray-900 p-1 rounded-lg w-fit mx-auto">
           <button onClick={() => setMode("verify")}
             className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${
               mode === "verify" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"}`}>
@@ -121,11 +125,17 @@ export default function Home() {
           </button>
         </div>
 
+        <p className="text-center mb-6">
+          <a href="/guide" className="text-xs text-gray-500 hover:text-gray-300 transition-colors underline underline-offset-2">
+            New here? How does this work?
+          </a>
+        </p>
+
         {mode === "verify" && (
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
             <h3 className="text-lg font-semibold mb-1">Verify an Attestation</h3>
             <p className="text-gray-400 text-sm mb-6">
-              Enter the three inputs from the public UCC-1 metadata. Free — no wallet needed.
+              Enter the three inputs from the public UCC-1 metadata. Free - no wallet needed.
             </p>
             <div className="space-y-4">
               <div>
@@ -312,6 +322,9 @@ export default function Home() {
                       <li>File your UCC-1 referencing this hash in the collateral description</li>
                       <li>Publish metadata JSON with filing ID, wallet, salt, and hash</li>
                     </ol>
+                    <a href="/guide" className="block mt-3 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                      Full step-by-step guide including how to attest on PolygonScan
+                    </a>
                   </div>
                 </div>
               )}
@@ -334,6 +347,10 @@ export default function Home() {
                 className="text-xs px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors">
                 GitHub
               </a>
+              <a href="/guide"
+                className="text-xs px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors">
+                How-To Guide
+              </a>
             </div>
           </div>
         </div>
@@ -350,7 +367,6 @@ export default function Home() {
 
         <footer className="mt-8 text-center text-xs text-gray-600">
           <p>UCC-Chain LLC - HeirSure LLC - New York - April 2026</p>
-          
         </footer>
       </div>
     </main>
