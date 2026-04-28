@@ -474,9 +474,9 @@ Metadata at [YOUR_METADATA_URL].`}
                   <select name="service" required
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
                     <option value="">Select a service...</option>
-                    <option value="Verification Report - $150">Verification Report - $49</option>
-                    <option value="Full Filing Service - $500">Full Filing Service - $99</option>
-                    <option value="Monthly Monitoring - $99/mo">Monthly Monitoring - $19/mo</option>
+                    <option value="Verification Report - $49">Verification Report - $49</option>
+                    <option value="Full Filing Service - $99">Full Filing Service - $99</option>
+                    <option value="Monthly Monitoring - $19/mo">Monthly Monitoring - $19/mo</option>
                     <option value="Custom / Not Sure">Custom / Not Sure</option>
                   </select>
                 </div>
