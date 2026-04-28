@@ -402,7 +402,7 @@ Metadata at [YOUR_METADATA_URL].`}
             {[
               {
                 name: "Verification Report",
-                price: "$150",
+                price: "$49",
                 desc: "We verify one attestation and deliver a proof JSON plus written summary. Perfect for trustees and attorneys.",
                 features: ["Attestation verified on Polygon", "Court-ready proof JSON artifact", "Written verification summary", "48-hour turnaround"],
                 color: "border-teal-500/40",
@@ -410,7 +410,7 @@ Metadata at [YOUR_METADATA_URL].`}
               },
               {
                 name: "Full Filing Service",
-                price: "$500",
+                price: "$99",
                 desc: "We handle everything: hash generation, on-chain attestation, metadata publishing, and verification.",
                 features: ["Complete attestation workflow", "Hash generation + salt management", "Polygon Mainnet attestation", "Metadata published to GitHub", "Verification confirmation"],
                 color: "border-blue-500/40",
@@ -418,7 +418,7 @@ Metadata at [YOUR_METADATA_URL].`}
               },
               {
                 name: "Monthly Monitoring",
-                price: "$99/mo",
+                price: "$19/mo",
                 desc: "Ongoing monitoring of your attestations with alerts on any issues. Peace of mind for active lenders.",
                 features: ["Monitor all your attestations", "Alert on revocation or issues", "Monthly status reports", "Priority support"],
                 color: "border-purple-500/40",
