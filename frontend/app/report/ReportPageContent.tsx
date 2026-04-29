@@ -62,12 +62,12 @@ export default function ReportPageContent() {
 
     y = 40;
 
-    // Status box
-    const statusColor = status === 'Active' ? [22, 163, 74] : status === 'Revoked' ? [220, 38, 38] : [100, 116, 139];
-    const statusBg = status === 'Active' ? [240, 253, 244] : status === 'Revoked' ? [254, 242, 242] : [248, 250, 252];
-    doc.setFillColor(...statusBg);
+    // Status box - Fix TypeScript spread operator issue
+    const statusColor: [number, number, number] = status === 'Active' ? [22, 163, 74] : status === 'Revoked' ? [220, 38, 38] : [100, 116, 139];
+    const statusBg: [number, number, number] = status === 'Active' ? [240, 253, 244] : status === 'Revoked' ? [254, 242, 242] : [248, 250, 252];
+    doc.setFillColor(statusBg[0], statusBg[1], statusBg[2]);
     doc.rect(15, y, pageWidth - 30, 20, 'F');
-    doc.setTextColor(...statusColor);
+    doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
     doc.setFontSize(13);
     const statusText = status === 'Active' ? '✓  ACTIVE' : status === 'Revoked' ? '✗  REVOKED' : '—  NOT FOUND';
     doc.text(statusText, 20, y + 12);
@@ -189,13 +189,11 @@ export default function ReportPageContent() {
     <div className="min-h-screen bg-slate-50 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Header */}
           <div className="bg-slate-900 text-white px-8 py-6">
             <h1 className="text-3xl font-bold">UCC-Chain</h1>
             <p className="text-slate-400 text-sm">VERIFICATION REPORT</p>
           </div>
 
-          {/* Status */}
           <div className={`${statusBg} border-b-4 ${statusBorder} px-8 py-6`}>
             <div className="flex justify-between items-center">
               <div className={`text-2xl font-bold text-${statusColor}-600`}>
@@ -210,13 +208,11 @@ export default function ReportPageContent() {
             </div>
           </div>
 
-          {/* Summary */}
           <div className="px-8 py-6 bg-slate-50">
             <h2 className="text-xs font-bold text-slate-500 uppercase mb-2">Verification Summary</h2>
             <p className="text-slate-800">{summary}</p>
           </div>
 
-          {/* Download Button */}
           <div className="px-8 py-6 border-t border-slate-200">
             <button
               onClick={downloadPDF}
@@ -226,7 +222,6 @@ export default function ReportPageContent() {
             </button>
           </div>
 
-          {/* View JSON */}
           <div className="px-8 py-6 border-t border-slate-200">
             <details>
               <summary className="cursor-pointer text-sm font-bold text-slate-600 hover:text-slate-900">
