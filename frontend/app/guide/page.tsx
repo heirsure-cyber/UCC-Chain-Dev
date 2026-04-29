@@ -392,44 +392,36 @@ Metadata at [YOUR_METADATA_URL].`}
         {/* Services section */}
         <div className="mt-12 pt-8 border-t border-gray-800">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold mb-2">Too Technical? We Can Do This For You</h2>
-            <p className="text-gray-400 text-sm">
-              HeirSure LLC offers full-service UCC-Chain attestation and verification for lenders, trustees, and fiduciaries who need expert assistance.
+            <h2 className="text-2xl font-bold mb-2">Professional Verification Services</h2>
+            <p className="text-gray-400 text-sm max-w-2xl mx-auto">
+              HeirSure LLC offers automated verification and monitoring services for lenders, trustees, and fiduciaries. We provide technical verification only — not legal advice. Consult your attorney for collateral description language and UCC filing strategy.
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-2 gap-6 mb-8">
             {[
               {
                 name: "Verification Report",
                 price: "$49",
-                desc: "We verify one attestation and deliver a proof JSON plus written summary. Perfect for trustees and attorneys.",
-                features: ["Attestation verified on Polygon", "Court-ready proof JSON artifact", "Written verification summary", "48-hour turnaround"],
+                desc: "We verify one attestation and deliver a court-ready proof JSON plus written summary within 48 hours.",
+                features: ["Attestation verified on Polygon Mainnet", "Court-ready proof JSON artifact", "Written verification summary", "48-hour turnaround"],
                 color: "border-teal-500/40",
                 labelColor: "text-teal-400",
               },
               {
-                name: "Full Filing Service",
-                price: "$99",
-                desc: "We handle everything: hash generation, on-chain attestation, metadata publishing, and verification.",
-                features: ["Complete attestation workflow", "Hash generation + salt management", "Polygon Mainnet attestation", "Metadata published to GitHub", "Verification confirmation"],
-                color: "border-blue-500/40",
-                labelColor: "text-blue-400",
-              },
-              {
                 name: "Monthly Monitoring",
                 price: "$19/mo",
-                desc: "Ongoing monitoring of your attestations with alerts on any issues. Peace of mind for active lenders.",
-                features: ["Monitor all your attestations", "Alert on revocation or issues", "Monthly status reports", "Priority support"],
+                desc: "Ongoing automated monitoring of your attestations with instant alerts on any status changes.",
+                features: ["Monitor all your attestations 24/7", "Instant email alert on revocation", "Monthly status reports", "Priority email support"],
                 color: "border-purple-500/40",
                 labelColor: "text-purple-400",
               },
             ].map((service) => (
-              <div key={service.name} className={`bg-gray-900 border ${service.color} rounded-xl p-5`}>
-                <p className={`${service.labelColor} font-bold text-lg mb-1`}>{service.name}</p>
-                <p className="text-3xl font-bold text-white mb-3">{service.price}</p>
-                <p className="text-sm text-gray-400 mb-4">{service.desc}</p>
-                <ul className="space-y-2 mb-4">
+              <div key={service.name} className={`bg-gray-900 border ${service.color} rounded-xl p-6`}>
+                <p className={`${service.labelColor} font-bold text-xl mb-1`}>{service.name}</p>
+                <p className="text-4xl font-bold text-white mb-3">{service.price}</p>
+                <p className="text-sm text-gray-400 mb-4 leading-relaxed">{service.desc}</p>
+                <ul className="space-y-2 mb-5">
                   {service.features.map((f) => (
                     <li key={f} className="text-xs text-gray-300 flex items-start gap-2">
                       <span className={`${service.labelColor} flex-shrink-0 mt-0.5`}>✓</span>
@@ -443,11 +435,12 @@ Metadata at [YOUR_METADATA_URL].`}
 
           {!formSubmitted ? (
             <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
-              <h3 className="font-bold text-white mb-4">Request Service</h3>
+              <h3 className="font-bold text-white mb-2">Request Service</h3>
+              <p className="text-xs text-gray-400 mb-4">We provide technical verification services only. For UCC filing strategy and collateral description language, consult a secured-transactions attorney.</p>
               <form action={FORMSPREE_ENDPOINT} method="POST" onSubmit={() => setFormSubmitted(true)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">Your Name</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">Your Name *</label>
                     <input type="text" name="name" required
                       className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors" />
                   </div>
@@ -459,7 +452,7 @@ Metadata at [YOUR_METADATA_URL].`}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">Email *</label>
                     <input type="email" name="email" required
                       className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors" />
                   </div>
@@ -470,36 +463,41 @@ Metadata at [YOUR_METADATA_URL].`}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">Service Interested In</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">Service Interested In *</label>
                   <select name="service" required
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
                     <option value="">Select a service...</option>
                     <option value="Verification Report - $49">Verification Report - $49</option>
-                    <option value="Full Filing Service - $99">Full Filing Service - $99</option>
                     <option value="Monthly Monitoring - $19/mo">Monthly Monitoring - $19/mo</option>
-                    <option value="Custom / Not Sure">Custom / Not Sure</option>
+                    <option value="Question / Not Sure">Question / Not Sure</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">Additional Details</label>
-                  <textarea name="message" rows={4}
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">Filing ID, Wallet Address, Salt (if applicable)</label>
+                  <textarea name="attestation_details" rows={3}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors font-mono"
+                    placeholder="Filing ID: YOUR-FILING-ID&#10;Wallet: 0x...&#10;Salt: abc123..."></textarea>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">Additional Notes</label>
+                  <textarea name="message" rows={3}
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
-                    placeholder="Tell us about your use case, timeline, or any questions you have..."></textarea>
+                    placeholder="Any questions or additional context..."></textarea>
                 </div>
                 <button type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors text-sm">
-                  Submit Enquiry
+                  Submit Request
                 </button>
               </form>
               <p className="text-xs text-gray-500 mt-3 text-center">
-                We typically respond within 24 hours. Not legal advice.
+                We typically respond within 24 hours. Not legal advice. Technical verification services only.
               </p>
             </div>
           ) : (
             <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6 text-center">
-              <p className="text-green-400 font-bold text-lg mb-2">Thank you for your enquiry!</p>
+              <p className="text-green-400 font-bold text-lg mb-2">Thank you for your request!</p>
               <p className="text-gray-300 text-sm">
-                We have received your request and will get back to you within 24 hours at the email you provided.
+                We have received your enquiry and will respond within 24 hours at the email you provided.
               </p>
             </div>
           )}
@@ -510,7 +508,7 @@ Metadata at [YOUR_METADATA_URL].`}
             Go to Verifier
           </a>
           <p className="text-xs text-gray-600 mt-4">UCC-Chain LLC - HeirSure LLC - New York - April 2026</p>
-          <p className="text-xs text-gray-600">Not legal advice. Pre-MVP. Pre-case-law. Consult a secured-transactions attorney before use.</p>
+          <p className="text-xs text-gray-600">Not legal advice. Technical verification services only. Consult a secured-transactions attorney before use.</p>
         </div>
 
       </div>
