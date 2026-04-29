@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 
-// Server-side unrestricted API key for Vercel → Alchemy calls
 const ALCHEMY_API_KEY = "TxzPNxD1jxp2dk7Rovh-1";
 const ALCHEMY_RPC = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 const REGISTRY_CONTRACT = "0xC17def4DF914b016D60500Cb9C459c3eAf6469Ff";
@@ -59,7 +58,10 @@ export async function POST(request: NextRequest) {
     const preImage = `UCC-CHAIN/v1|${filingId}|${wallet.toLowerCase()}|${salt}`;
     const commitmentHash = '0x' + createHash('sha256').update(preImage, 'utf8').digest('hex');
 
-    const callData = encodeFunctionCall('verify', ['bytes32'], [commitmentHash]);
+    // Function selector for verify(bytes32) - precomputed from Keccak256
+    const VERIFY_SELECTOR = '0xfc735e99';
+    const param = commitmentHash.slice(2).padStart(64, '0');
+    const callData = VERIFY_SELECTOR + param;
 
     const rpcPayload = {
       jsonrpc: "2.0",
@@ -117,12 +119,6 @@ export async function POST(request: NextRequest) {
     console.error('Verification API error:', error);
     return NextResponse.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
   }
-}
-
-function encodeFunctionCall(functionName: string, types: string[], values: any[]): string {
-  const selector = '0x' + createHash('sha256').update(`${functionName}(${types.join(',')})`, 'utf8').digest('hex').slice(0, 8);
-  const param = values[0].slice(2).padStart(64, '0');
-  return selector + param;
 }
 
 function decodeAttestationResult(resultHex: string): AttestationResult {
