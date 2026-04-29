@@ -27,9 +27,13 @@ export default function GuidePage() {
     estate: "As a fiduciary, you can document custody arrangements under UCC Section 12-105(e) acknowledging custodian framework.",
   };
 
+  const scrollToServices = () => {
+    document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <main className="min-h-screen bg-gray-950 text-white">
-      <header className="border-b border-gray-800 bg-gray-900">
+      <header className="border-b border-gray-800 bg-gray-900 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <a href="/" className="text-xl font-bold text-white hover:text-yellow-400 transition-colors">
@@ -37,9 +41,16 @@ export default function GuidePage() {
             </a>
             <p className="text-xs text-gray-400">Cryptographic UCC-1 Verification Protocol</p>
           </div>
-          <a href="/" className="text-xs px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors">
-            Back to Verifier
-          </a>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={scrollToServices}
+              className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+              Professional Services
+            </button>
+            <a href="/" className="text-xs px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors">
+              Back to Verifier
+            </a>
+          </div>
         </div>
       </header>
 
@@ -390,7 +401,7 @@ Metadata at [YOUR_METADATA_URL].`}
         </div>
 
         {/* Services section */}
-        <div className="mt-12 pt-8 border-t border-gray-800">
+        <div id="services" className="mt-12 pt-8 border-t border-gray-800 scroll-mt-20">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold mb-2">Professional Verification Services</h2>
             <p className="text-gray-400 text-sm max-w-2xl mx-auto">

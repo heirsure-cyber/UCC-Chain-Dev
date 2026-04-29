@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 
-// Server-side API key (unrestricted for Vercel → Alchemy calls)
-const ALCHEMY_API_KEY = "rCohxDS16fTe86KU1wDMVt0TXHGaO9Ow";
+// Server-side unrestricted API key for Vercel → Alchemy calls
+const ALCHEMY_API_KEY = "TxzPNxD1jxp2dk7Rovh-1";
 const ALCHEMY_RPC = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 const REGISTRY_CONTRACT = "0xC17def4DF914b016D60500Cb9C459c3eAf6469Ff";
 
