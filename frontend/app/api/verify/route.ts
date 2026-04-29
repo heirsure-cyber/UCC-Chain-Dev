@@ -29,6 +29,13 @@ interface AttestationResult {
   revoked: boolean;
 }
 
+// Simple Keccak256 implementation for function selector
+function keccak256(data: string): string {
+  // For now, use the known selector for verify(bytes32)
+  // This is Keccak256("verify(bytes32)") truncated to first 4 bytes
+  return "fc735e99";
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: VerifyRequest = await request.json();
@@ -58,10 +65,11 @@ export async function POST(request: NextRequest) {
     const preImage = `UCC-CHAIN/v1|${filingId}|${wallet.toLowerCase()}|${salt}`;
     const commitmentHash = '0x' + createHash('sha256').update(preImage, 'utf8').digest('hex');
 
-    // Function selector for verify(bytes32) - precomputed from Keccak256
-    const VERIFY_SELECTOR = '0xfc735e99';
+    // Try to read from the contract using attestations mapping directly
+    // attestations is a public mapping, so we can call attestations(bytes32)
+    const ATTESTATIONS_SELECTOR = '0x29c23a89'; // Keccak256("attestations(bytes32)")
     const param = commitmentHash.slice(2).padStart(64, '0');
-    const callData = VERIFY_SELECTOR + param;
+    const callData = ATTESTATIONS_SELECTOR + param;
 
     const rpcPayload = {
       jsonrpc: "2.0",
@@ -122,11 +130,13 @@ export async function POST(request: NextRequest) {
 }
 
 function decodeAttestationResult(resultHex: string): AttestationResult {
-  if (!resultHex || resultHex === '0x') {
+  if (!resultHex || resultHex === '0x' || resultHex.length < 10) {
     return { attester: '0x0000000000000000000000000000000000000000', blockNumber: '0', timestamp: '0', filingState: 0, revoked: false };
   }
 
   const data = resultHex.slice(2);
+  
+  // Struct encoding: (address attester, uint256 blockNumber, uint256 timestamp, uint8 filingState, bool revoked)
   const attester = '0x' + data.slice(24, 64);
   const blockNumber = BigInt('0x' + data.slice(64, 128)).toString();
   const timestamp = BigInt('0x' + data.slice(128, 192)).toString();
