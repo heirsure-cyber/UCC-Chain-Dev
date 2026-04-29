@@ -6,8 +6,6 @@ const ALCHEMY_API_KEY = "TxzPNxD1jxp2dk7Rovh-1";
 const ALCHEMY_RPC = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 const REGISTRY_CONTRACT = "0xC17def4DF914b016D60500Cb9C459c3eAf6469Ff";
 
-// Exact ABI from UCCChainRegistry.sol
-// struct Attestation { address attester; uint64 blockNumber; uint64 timestamp; uint8 filingState; bool revoked; }
 const REGISTRY_ABI = [
   {
     "inputs": [{"name": "commitmentHash", "type": "bytes32"}],
@@ -46,6 +44,11 @@ interface VerifyRequest {
   salt: string;
 }
 
+function computeHash(filingId: string, wallet: string, salt: string): string {
+  const preImage = `UCC-CHAIN/v1|${filingId}|${wallet}|${salt}`;
+  return '0x' + createHash('sha256').update(preImage, 'utf8').digest('hex');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: VerifyRequest = await request.json();
@@ -72,26 +75,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Compute commitment hash - must match UCCChainRegistry.sol pre-image format
-    const preImage = `UCC-CHAIN/v1|${filingId}|${wallet.toLowerCase()}|${salt}`;
-    const commitmentHash = '0x' + createHash('sha256').update(preImage, 'utf8').digest('hex');
-
-    // Call verify(bytes32) using ethers.js with exact ABI
     const provider = new JsonRpcProvider(ALCHEMY_RPC);
     const contract = new Contract(REGISTRY_CONTRACT, REGISTRY_ABI, provider);
-    
-    const result = await contract.verify(commitmentHash);
 
-    const attestation = {
-      attester: result.attester as string,
-      blockNumber: result.blockNumber.toString(),
-      timestamp: result.timestamp.toString(),
-      filingState: Number(result.filingState),
-      revoked: result.revoked as boolean
-    };
+    // Try three wallet casing variants to match however the original hash was computed
+    const walletVariants = [
+      wallet,                  // as-entered (mixed case EIP-55)
+      wallet.toLowerCase(),    // all lowercase
+      wallet.toUpperCase(),    // all uppercase
+    ];
 
-    // blockNumber === 0 means no attestation found
-    const status = attestation.blockNumber === '0'
+    let attestation = null;
+    let matchedHash = '';
+    let matchedVariant = '';
+
+    for (const walletVariant of walletVariants) {
+      const hash = computeHash(filingId, walletVariant, salt);
+      const result = await contract.verify(hash);
+      
+      if (result.blockNumber.toString() !== '0') {
+        attestation = {
+          attester: result.attester as string,
+          blockNumber: result.blockNumber.toString(),
+          timestamp: result.timestamp.toString(),
+          filingState: Number(result.filingState),
+          revoked: result.revoked as boolean
+        };
+        matchedHash = hash;
+        matchedVariant = walletVariant;
+        break;
+      }
+      
+      // Save first hash as default if nothing found
+      if (!matchedHash) matchedHash = hash;
+    }
+
+    const status = !attestation
       ? 'Not Found'
       : attestation.revoked
         ? 'Revoked'
@@ -102,12 +121,12 @@ export async function POST(request: NextRequest) {
       verified_at: new Date().toISOString(),
       inputs: {
         filing_id: filingId,
-        secured_party_wallet: wallet.toLowerCase(),
+        secured_party_wallet: wallet,
         salt: salt
       },
-      commitment_hash: commitmentHash,
+      commitment_hash: matchedHash,
       status: status,
-      on_chain_data: attestation.blockNumber !== '0' ? {
+      on_chain_data: attestation ? {
         attester: attestation.attester,
         block_number: parseInt(attestation.blockNumber),
         timestamp: parseInt(attestation.timestamp),
@@ -134,26 +153,17 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateSummary(
-  filingId: string,
-  wallet: string,
-  status: string,
-  attestation: any
-): string {
+function generateSummary(filingId: string, wallet: string, status: string, attestation: any): string {
   if (status === 'Not Found') {
     return `No attestation found on Polygon Mainnet for filing ID "${filingId}" with secured party wallet ${wallet}. This attestation has not been recorded on-chain, or the provided inputs (filing ID, wallet address, or salt) are incorrect.`;
   }
 
   if (status === 'Revoked') {
-    const date = new Date(parseInt(attestation.timestamp) * 1000).toLocaleDateString('en-US', {
-      month: 'long', day: 'numeric', year: 'numeric'
-    });
+    const date = new Date(parseInt(attestation.timestamp) * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     return `The attestation for filing ID "${filingId}" was recorded on Polygon Mainnet at block ${attestation.blockNumber} on ${date}, but has been REVOKED by the original attester (${attestation.attester}). This could indicate the loan was terminated, the wallet was compromised, or the filing was corrected. Look for a newer attestation on the same filing.`;
   }
 
-  const date = new Date(parseInt(attestation.timestamp) * 1000).toLocaleDateString('en-US', {
-    month: 'long', day: 'numeric', year: 'numeric'
-  });
+  const date = new Date(parseInt(attestation.timestamp) * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   const stateName = STATE_NAMES[attestation.filingState] || "Unknown State";
 
   return `VERIFIED ACTIVE. The attestation for filing ID "${filingId}" is recorded on Polygon Mainnet at block ${attestation.blockNumber}, attested on ${date} by wallet ${attestation.attester}. Filing state: ${stateName}. This attestation supports the identifiability prong of the UCC § 12-105 control test for the secured party at wallet ${wallet}. The attestation has not been revoked and remains in force.`;
