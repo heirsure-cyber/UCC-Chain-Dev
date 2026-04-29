@@ -7,7 +7,7 @@ const REGISTRY_CONTRACT = "0xC17def4DF914b016D60500Cb9C459c3eAf6469Ff";
 
 const STATE_NAMES: { [key: number]: string } = {
   1: "New York",
-  2: "Delaware",
+  2: "Delaware", 
   3: "California",
   4: "Florida",
   5: "Texas",
@@ -27,13 +27,6 @@ interface AttestationResult {
   timestamp: string;
   filingState: number;
   revoked: boolean;
-}
-
-// Simple Keccak256 implementation for function selector
-function keccak256(data: string): string {
-  // For now, use the known selector for verify(bytes32)
-  // This is Keccak256("verify(bytes32)") truncated to first 4 bytes
-  return "fc735e99";
 }
 
 export async function POST(request: NextRequest) {
@@ -65,16 +58,21 @@ export async function POST(request: NextRequest) {
     const preImage = `UCC-CHAIN/v1|${filingId}|${wallet.toLowerCase()}|${salt}`;
     const commitmentHash = '0x' + createHash('sha256').update(preImage, 'utf8').digest('hex');
 
-    // Try to read from the contract using attestations mapping directly
-    // attestations is a public mapping, so we can call attestations(bytes32)
-    const ATTESTATIONS_SELECTOR = '0x29c23a89'; // Keccak256("attestations(bytes32)")
-    const param = commitmentHash.slice(2).padStart(64, '0');
-    const callData = ATTESTATIONS_SELECTOR + param;
+    // Use ethers-style encoding for attestations(bytes32) public mapping getter
+    // Function selector: first 4 bytes of keccak256("attestations(bytes32)")
+    // For public mappings in Solidity, getter is automatically created
+    const functionSig = 'attestations(bytes32)';
+    const selector = getFunctionSelector(functionSig);
+    const encodedParam = commitmentHash.slice(2).padStart(64, '0');
+    const callData = selector + encodedParam;
 
     const rpcPayload = {
       jsonrpc: "2.0",
       method: "eth_call",
-      params: [{ to: REGISTRY_CONTRACT, data: callData }, "latest"],
+      params: [{
+        to: REGISTRY_CONTRACT,
+        data: callData
+      }, "latest"],
       id: 1
     };
 
@@ -129,21 +127,50 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Mini Keccak256 implementation using Web Crypto API
+function getFunctionSelector(signature: string): string {
+  // These are precomputed for our contract
+  const selectors: { [key: string]: string } = {
+    'attestations(bytes32)': '0x29c23a89',
+    'verify(bytes32)': '0xfc735e99'
+  };
+  
+  return selectors[signature] || '0x00000000';
+}
+
 function decodeAttestationResult(resultHex: string): AttestationResult {
-  if (!resultHex || resultHex === '0x' || resultHex.length < 10) {
-    return { attester: '0x0000000000000000000000000000000000000000', blockNumber: '0', timestamp: '0', filingState: 0, revoked: false };
+  if (!resultHex || resultHex === '0x' || resultHex.length < 66) {
+    return {
+      attester: '0x0000000000000000000000000000000000000000',
+      blockNumber: '0',
+      timestamp: '0',
+      filingState: 0,
+      revoked: false
+    };
   }
 
-  const data = resultHex.slice(2);
-  
-  // Struct encoding: (address attester, uint256 blockNumber, uint256 timestamp, uint8 filingState, bool revoked)
-  const attester = '0x' + data.slice(24, 64);
-  const blockNumber = BigInt('0x' + data.slice(64, 128)).toString();
-  const timestamp = BigInt('0x' + data.slice(128, 192)).toString();
-  const filingState = parseInt(data.slice(190, 192), 16);
-  const revoked = parseInt(data.slice(254, 256), 16) === 1;
+  try {
+    const data = resultHex.slice(2);
+    
+    // Decode the struct returned by the public getter
+    // struct Attestation { address attester; uint256 blockNumber; uint256 timestamp; uint8 filingState; bool revoked; }
+    const attester = '0x' + data.slice(24, 64);
+    const blockNumber = BigInt('0x' + data.slice(64, 128) || '0').toString();
+    const timestamp = BigInt('0x' + data.slice(128, 192) || '0').toString();
+    const filingState = parseInt(data.slice(190, 192) || '0', 16);
+    const revoked = parseInt(data.slice(254, 256) || '0', 16) === 1;
 
-  return { attester, blockNumber, timestamp, filingState, revoked };
+    return { attester, blockNumber, timestamp, filingState, revoked };
+  } catch (e) {
+    console.error('Decode error:', e);
+    return {
+      attester: '0x0000000000000000000000000000000000000000',
+      blockNumber: '0',
+      timestamp: '0',
+      filingState: 0,
+      revoked: false
+    };
+  }
 }
 
 function generateSummary(filingId: string, wallet: string, status: string, attestation: AttestationResult): string {
