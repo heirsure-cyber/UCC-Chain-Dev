@@ -1,13 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
+import { JsonRpcProvider, Contract } from 'ethers';
 
 const ALCHEMY_API_KEY = "TxzPNxD1jxp2dk7Rovh-1";
 const ALCHEMY_RPC = `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 const REGISTRY_CONTRACT = "0xC17def4DF914b016D60500Cb9C459c3eAf6469Ff";
 
+// Exact ABI from UCCChainRegistry.sol
+// struct Attestation { address attester; uint64 blockNumber; uint64 timestamp; uint8 filingState; bool revoked; }
+const REGISTRY_ABI = [
+  {
+    "inputs": [{"name": "commitmentHash", "type": "bytes32"}],
+    "name": "verify",
+    "outputs": [
+      {
+        "components": [
+          {"name": "attester", "type": "address"},
+          {"name": "blockNumber", "type": "uint64"},
+          {"name": "timestamp", "type": "uint64"},
+          {"name": "filingState", "type": "uint8"},
+          {"name": "revoked", "type": "bool"}
+        ],
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
 const STATE_NAMES: { [key: number]: string } = {
   1: "New York",
-  2: "Delaware", 
+  2: "Delaware",
   3: "California",
   4: "Florida",
   5: "Texas",
@@ -19,14 +44,6 @@ interface VerifyRequest {
   filingId: string;
   wallet: string;
   salt: string;
-}
-
-interface AttestationResult {
-  attester: string;
-  blockNumber: string;
-  timestamp: string;
-  filingState: number;
-  revoked: boolean;
 }
 
 export async function POST(request: NextRequest) {
@@ -55,52 +72,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Compute commitment hash - must match UCCChainRegistry.sol pre-image format
     const preImage = `UCC-CHAIN/v1|${filingId}|${wallet.toLowerCase()}|${salt}`;
     const commitmentHash = '0x' + createHash('sha256').update(preImage, 'utf8').digest('hex');
 
-    // Use ethers-style encoding for attestations(bytes32) public mapping getter
-    // Function selector: first 4 bytes of keccak256("attestations(bytes32)")
-    // For public mappings in Solidity, getter is automatically created
-    const functionSig = 'attestations(bytes32)';
-    const selector = getFunctionSelector(functionSig);
-    const encodedParam = commitmentHash.slice(2).padStart(64, '0');
-    const callData = selector + encodedParam;
+    // Call verify(bytes32) using ethers.js with exact ABI
+    const provider = new JsonRpcProvider(ALCHEMY_RPC);
+    const contract = new Contract(REGISTRY_CONTRACT, REGISTRY_ABI, provider);
+    
+    const result = await contract.verify(commitmentHash);
 
-    const rpcPayload = {
-      jsonrpc: "2.0",
-      method: "eth_call",
-      params: [{
-        to: REGISTRY_CONTRACT,
-        data: callData
-      }, "latest"],
-      id: 1
+    const attestation = {
+      attester: result.attester as string,
+      blockNumber: result.blockNumber.toString(),
+      timestamp: result.timestamp.toString(),
+      filingState: Number(result.filingState),
+      revoked: result.revoked as boolean
     };
 
-    const rpcResponse = await fetch(ALCHEMY_RPC, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(rpcPayload)
-    });
-
-    if (!rpcResponse.ok) {
-      throw new Error(`Alchemy RPC failed: ${rpcResponse.statusText}`);
-    }
-
-    const rpcResult = await rpcResponse.json();
-    
-    if (rpcResult.error) {
-      throw new Error(`RPC error: ${rpcResult.error.message}`);
-    }
-
-    const resultHex = rpcResult.result;
-    const attestation = decodeAttestationResult(resultHex);
-
-    const status = attestation.blockNumber === '0' ? 'Not Found' : attestation.revoked ? 'Revoked' : 'Active';
+    // blockNumber === 0 means no attestation found
+    const status = attestation.blockNumber === '0'
+      ? 'Not Found'
+      : attestation.revoked
+        ? 'Revoked'
+        : 'Active';
 
     const proof = {
       ucc_chain_version: "v1",
       verified_at: new Date().toISOString(),
-      inputs: { filing_id: filingId, secured_party_wallet: wallet.toLowerCase(), salt: salt },
+      inputs: {
+        filing_id: filingId,
+        secured_party_wallet: wallet.toLowerCase(),
+        salt: salt
+      },
       commitment_hash: commitmentHash,
       status: status,
       on_chain_data: attestation.blockNumber !== '0' ? {
@@ -123,69 +127,35 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Verification API error:', error);
-    return NextResponse.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
+    return NextResponse.json({
+      success: false,
+      error: error.message || "Internal server error"
+    }, { status: 500 });
   }
 }
 
-// Mini Keccak256 implementation using Web Crypto API
-function getFunctionSelector(signature: string): string {
-  // These are precomputed for our contract
-  const selectors: { [key: string]: string } = {
-    'attestations(bytes32)': '0x29c23a89',
-    'verify(bytes32)': '0xfc735e99'
-  };
-  
-  return selectors[signature] || '0x00000000';
-}
-
-function decodeAttestationResult(resultHex: string): AttestationResult {
-  if (!resultHex || resultHex === '0x' || resultHex.length < 66) {
-    return {
-      attester: '0x0000000000000000000000000000000000000000',
-      blockNumber: '0',
-      timestamp: '0',
-      filingState: 0,
-      revoked: false
-    };
-  }
-
-  try {
-    const data = resultHex.slice(2);
-    
-    // Decode the struct returned by the public getter
-    // struct Attestation { address attester; uint256 blockNumber; uint256 timestamp; uint8 filingState; bool revoked; }
-    const attester = '0x' + data.slice(24, 64);
-    const blockNumber = BigInt('0x' + data.slice(64, 128) || '0').toString();
-    const timestamp = BigInt('0x' + data.slice(128, 192) || '0').toString();
-    const filingState = parseInt(data.slice(190, 192) || '0', 16);
-    const revoked = parseInt(data.slice(254, 256) || '0', 16) === 1;
-
-    return { attester, blockNumber, timestamp, filingState, revoked };
-  } catch (e) {
-    console.error('Decode error:', e);
-    return {
-      attester: '0x0000000000000000000000000000000000000000',
-      blockNumber: '0',
-      timestamp: '0',
-      filingState: 0,
-      revoked: false
-    };
-  }
-}
-
-function generateSummary(filingId: string, wallet: string, status: string, attestation: AttestationResult): string {
+function generateSummary(
+  filingId: string,
+  wallet: string,
+  status: string,
+  attestation: any
+): string {
   if (status === 'Not Found') {
     return `No attestation found on Polygon Mainnet for filing ID "${filingId}" with secured party wallet ${wallet}. This attestation has not been recorded on-chain, or the provided inputs (filing ID, wallet address, or salt) are incorrect.`;
   }
 
   if (status === 'Revoked') {
-    const date = new Date(parseInt(attestation.timestamp) * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const date = new Date(parseInt(attestation.timestamp) * 1000).toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric'
+    });
     return `The attestation for filing ID "${filingId}" was recorded on Polygon Mainnet at block ${attestation.blockNumber} on ${date}, but has been REVOKED by the original attester (${attestation.attester}). This could indicate the loan was terminated, the wallet was compromised, or the filing was corrected. Look for a newer attestation on the same filing.`;
   }
 
-  const date = new Date(parseInt(attestation.timestamp) * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const date = new Date(parseInt(attestation.timestamp) * 1000).toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric'
+  });
   const stateName = STATE_NAMES[attestation.filingState] || "Unknown State";
-  
+
   return `VERIFIED ACTIVE. The attestation for filing ID "${filingId}" is recorded on Polygon Mainnet at block ${attestation.blockNumber}, attested on ${date} by wallet ${attestation.attester}. Filing state: ${stateName}. This attestation supports the identifiability prong of the UCC § 12-105 control test for the secured party at wallet ${wallet}. The attestation has not been revoked and remains in force.`;
 }
 
